@@ -1,14 +1,23 @@
 package org.jenkins.plugins.statistics.gatherer;
 
 import com.amazonaws.regions.Region;
+import com.amazonaws.util.StringInputStream;
 import hudson.Extension;
 import hudson.util.FormValidation;
 import jenkins.YesNoMaybe;
 import jenkins.model.GlobalConfiguration;
 import net.sf.json.JSONObject;
+import org.jenkins.plugins.statistics.gatherer.util.TrustStoreUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import com.amazonaws.regions.RegionUtils;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 
 /**
  * Created by hthakkallapally on 6/25/2015.
@@ -28,6 +37,7 @@ public class StatisticsConfiguration extends GlobalConfiguration {
     private String awsSecretKey;
     private String snsTopicArn;
     private String logbackConfigXmlUrl;
+    private String httpsApiPem;
 
     private Boolean queueInfo;
     private Boolean buildInfo;
@@ -38,6 +48,28 @@ public class StatisticsConfiguration extends GlobalConfiguration {
     private Boolean shouldPublishToAwsSnsQueue;
 
     private Boolean shouldSendToLogback;
+
+    public void setHttpsApiPem(String httpsApiPem) {
+        System.out.println("setting pem with " + httpsApiPem);
+        this.httpsApiPem = httpsApiPem;
+        save();
+        addPemToTruststore(httpsApiPem);
+    }
+
+    private void addPemToTruststore(String httpsApiPem) {
+        TrustStoreUtils ts = new TrustStoreUtils();
+        try {
+            ts.configureTrustStore(new ByteArrayInputStream(httpsApiPem.getBytes()));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to load PEM on store", e);
+        }
+
+    }
+
+    public String getHttpsApiPem() {
+        return httpsApiPem;
+    }
+
 
     public StatisticsConfiguration() {
         load();

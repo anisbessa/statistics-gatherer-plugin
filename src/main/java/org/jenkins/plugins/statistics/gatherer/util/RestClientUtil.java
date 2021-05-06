@@ -21,6 +21,36 @@ public class RestClientUtil {
         throw new IllegalAccessError("Utility class");
     }
 
+    public static void postToService2(final String url, Object object) {
+
+            try {
+                String jsonToPost = JSONUtil.convertToJson(object);
+                Unirest.post(url)
+                        .header(ACCEPT, APPLICATION_JSON)
+                        .header(CONTENT_TYPE, APPLICATION_JSON)
+                        .body(jsonToPost)
+                        .asJsonAsync(new Callback<JsonNode>() {
+
+                            public void failed(UnirestException e) {
+                                LOGGER.log(Level.WARNING, "The request for url " + url + " has failed.", e);
+                            }
+
+                            public void completed(HttpResponse<JsonNode> response) {
+                                int responseCode = response.getStatus();
+                                LOGGER.log(Level.INFO, "The request for url " + url + " completed with status " + responseCode);
+                            }
+
+                            public void cancelled() {
+                                LOGGER.log(Level.INFO, "The request for url " + url + " has been cancelled");
+                            }
+
+                        });
+            } catch (Throwable e) {
+                LOGGER.log(Level.WARNING, "Unable to post event to url " + url, e);
+            }
+        }
+
+
     public static void postToService(final String url, Object object) {
         if (PropertyLoader.getShouldSendApiHttpRequests()) {
             try {

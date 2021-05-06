@@ -18,6 +18,9 @@ f.section(title:_("Statistics Gatherer")) {
     f.entry(title:_("ScmCheckoutInfo URL"), field:"scmCheckoutUrl") {
         f.textbox()
     }
+    f.entry(title:_("Http API PEM"), field:"httpsApiPem") {
+        f.textarea()
+    }
 
     f.entry(title:_("Send Queue Info"), field:"queueInfo") {
         f.checkbox(default: true)
