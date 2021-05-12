@@ -71,5 +71,11 @@ f.section(title:_("Statistics Gatherer")) {
         f.entry(title:_("LOGBack XML configuration URL"), field:"logbackConfigXmlUrl") {
             f.textbox()
         }
+        f.entry(title:_("Enable publish of events to LOGBack Elastic"), field:"shouldSendToLogbackElastic") {
+            f.checkbox()
+        }
+        f.entry(title:_("LOGBack elastic URL"), field:"logbackElasticUrl") {
+            f.textbox()
+        }
     }
 }

@@ -35,6 +35,14 @@ public class PropertyLoader {
         instance = propertyLoader;
     }
 
+    public static boolean getShouldSendToLogbackElastic() {
+        Boolean shouldSendToLogbackElastic = StatisticsConfiguration.get().getShouldSendToLogbackElastic();
+        if (shouldSendToLogbackElastic != null) {
+            return shouldSendToLogbackElastic;
+        }
+        return isTrue(getEnvironmentProperty("statistics.endpoint.shouldSendToLogbackElastic"));
+    }
+
     protected String getResourceBundleProperty(String keyProperty) {
         try {
             return resourceBundle.getString(keyProperty);

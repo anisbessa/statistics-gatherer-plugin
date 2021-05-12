@@ -6,13 +6,16 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.async.Callback;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.jenkins.plugins.statistics.gatherer.StatisticsConfiguration;
+import org.jenkins.plugins.statistics.gatherer.custom.CustomLogbackUtil;
 import org.jenkins.plugins.statistics.gatherer.model.build.BuildStats;
+import sun.net.www.http.HttpClient;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.*;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -23,8 +26,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 import static org.apache.http.HttpHeaders.ACCEPT;
 import static org.jenkins.plugins.statistics.gatherer.util.RestClientUtil.APPLICATION_JSON;
 
@@ -32,6 +35,7 @@ public class TrustStoreUtils {
     public static final String APPLICATION_JSON = "application/json";
     public static final String ACCEPT = "accept";
     public static final String CONTENT_TYPE = "Content-Type";
+    private static final Logger LOGGER = Logger.getLogger(TrustStoreUtils.class.getName());
 
     public static void main(String[] args) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, KeyManagementException {
         TrustStoreUtils ts = new TrustStoreUtils();
@@ -56,19 +60,23 @@ public class TrustStoreUtils {
                 "rhToLJAziw90ePBi7VWnWhh0MPOTELssZQ==\n" +
                 "-----END CERTIFICATE-----\n";
 
-        pemToTrustInputstream = new StringInputStream(pem);
-        //pemToTrustInputstream = new FileInputStream("/Users/anisbessa/dev/workspace/jenkins-monitoring/certificates/jwt.pem");
+        //pemToTrustInputstream = new StringInputStream(pem);
+        pemToTrustInputstream = new FileInputStream("/Users/anisbessa/dev/workspace/jenkins-monitoring/certificates/jwt.pem");
         ts.configureTrustStore(pemToTrustInputstream);
         BuildStats buildStats = new BuildStats();
         buildStats.setStartedUserId("anis");
         buildStats.setJobName("myjobname");
+        System.setProperty("elasticURL", "http://elastic:changeme@localhost:9200");
         //StatisticsConfiguration.get().setShouldSendApiHttpRequests(true);
-        postToService2("https://localhost:9702", buildStats);
+        //postToService2("https://localhost:9702", buildStats);
+        LogbackUtil.info(buildStats);
     }
 
     private static void postToService2(String url, BuildStats object) {
         try {
+
             String jsonToPost = JSONUtil.convertToJson(object);
+
             Unirest.post(url)
                     .header(ACCEPT, APPLICATION_JSON)
                     .header(CONTENT_TYPE, APPLICATION_JSON)
@@ -104,6 +112,9 @@ public class TrustStoreUtils {
         X509TrustManager myTrustManager = getMyTrustManagerFromCertificate(pemToTrust);
 
         X509TrustManager mergedTrustManager = createMergedTrustManager(jreTrustManager, myTrustManager);
+
+
+
         setSystemTrustManager(mergedTrustManager);
     }
 
@@ -190,6 +201,13 @@ public class TrustStoreUtils {
             throws NoSuchAlgorithmException, KeyManagementException {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(null, new TrustManager[] { mergedTrustManager }, null);
+
+        CloseableHttpAsyncClient httpClient = HttpAsyncClients.custom()
+                .setSSLContext(sslContext)
+                .build();
+
+        //Unirest.setHttpClient(httpClient);
+        Unirest.setAsyncHttpClient(httpClient);
 
         // You don't have to set this as the default context,
         // it depends on the library you're using.

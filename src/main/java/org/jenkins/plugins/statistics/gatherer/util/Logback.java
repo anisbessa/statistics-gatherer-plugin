@@ -1,5 +1,7 @@
 package org.jenkins.plugins.statistics.gatherer.util;
 
+import org.slf4j.Marker;
+
 /**
  * Subsystem to send logs through LOGBack
  */
@@ -27,6 +29,13 @@ public interface Logback {
      * @param msg message to send to LOGBack
      */
     void log(String msg);
+
+    /**
+     * Send the message to LOGBack with Marker
+     *
+     * @param msg message to send to LOGBack
+     */
+    void log(Marker marker, String msg);
 
     /**
      * Check for LOGBack configuration and reload when changed.

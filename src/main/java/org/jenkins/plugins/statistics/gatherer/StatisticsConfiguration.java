@@ -1,7 +1,6 @@
 package org.jenkins.plugins.statistics.gatherer;
 
 import com.amazonaws.regions.Region;
-import com.amazonaws.util.StringInputStream;
 import hudson.Extension;
 import hudson.util.FormValidation;
 import jenkins.YesNoMaybe;
@@ -13,11 +12,6 @@ import org.kohsuke.stapler.StaplerRequest;
 import com.amazonaws.regions.RegionUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 
 /**
  * Created by hthakkallapally on 6/25/2015.
@@ -26,6 +20,7 @@ import java.security.cert.CertificateException;
 public class StatisticsConfiguration extends GlobalConfiguration {
 
     public static final String PROTOCOL_ERROR_MESSAGE = "Only http and https protocols are supported";
+    public static final String ELASTIC_URL_PROPERTY = "elasticURL";
 
     private String queueUrl;
     private String buildUrl;
@@ -37,6 +32,7 @@ public class StatisticsConfiguration extends GlobalConfiguration {
     private String awsSecretKey;
     private String snsTopicArn;
     private String logbackConfigXmlUrl;
+    private String logbackElasticUrl;
     private String httpsApiPem;
 
     private Boolean queueInfo;
@@ -48,12 +44,19 @@ public class StatisticsConfiguration extends GlobalConfiguration {
     private Boolean shouldPublishToAwsSnsQueue;
 
     private Boolean shouldSendToLogback;
+    private Boolean shouldSendToLogbackElastic;
 
     public void setHttpsApiPem(String httpsApiPem) {
         System.out.println("setting pem with " + httpsApiPem);
         this.httpsApiPem = httpsApiPem;
         save();
         addPemToTruststore(httpsApiPem);
+    }
+
+    public void setLogbackElasticUrl(String logbackElasticUrl) {
+        System.out.println("setting logback elastic URL with " + logbackElasticUrl);
+        this.logbackElasticUrl = logbackElasticUrl;
+        save();
     }
 
     private void addPemToTruststore(String httpsApiPem) {
@@ -68,6 +71,10 @@ public class StatisticsConfiguration extends GlobalConfiguration {
 
     public String getHttpsApiPem() {
         return httpsApiPem;
+    }
+
+    public String getLogbackElasticUrl() {
+        return logbackElasticUrl;
     }
 
 
@@ -373,11 +380,20 @@ public class StatisticsConfiguration extends GlobalConfiguration {
         this.shouldSendToLogback = shouldSendToLogback;
     }
 
+    public void setShouldSendToLogbackElastic(Boolean shouldSendToLogbackElastic) {
+        this.shouldSendToLogbackElastic = shouldSendToLogbackElastic;
+        save();
+    }
+
     public String getLogbackConfigXmlUrl() {
         return logbackConfigXmlUrl;
     }
 
     public void setLogbackConfigXmlUrl(String logbackConfigXmlUrl) {
         this.logbackConfigXmlUrl = logbackConfigXmlUrl;
+    }
+
+    public Boolean getShouldSendToLogbackElastic() {
+        return shouldSendToLogbackElastic;
     }
 }

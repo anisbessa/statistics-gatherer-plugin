@@ -1,16 +1,23 @@
-package org.jenkins.plugins.statistics.gatherer.util;
+package org.jenkins.plugins.statistics.gatherer.custom;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
+import org.jenkins.plugins.statistics.gatherer.StatisticsConfiguration;
+import org.jenkins.plugins.statistics.gatherer.custom.CustomElasticsearchAppender;
+import org.jenkins.plugins.statistics.gatherer.util.Logback;
+import org.jenkins.plugins.statistics.gatherer.util.PropertyLoader;
+import org.jenkins.plugins.statistics.gatherer.util.URLSha;
 import org.slf4j.Marker;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class LogbackImpl implements Logback {
+import static org.jenkins.plugins.statistics.gatherer.StatisticsConfiguration.ELASTIC_URL_PROPERTY;
+
+public class CustomLogbackImpl implements Logback {
     private Logger logger;
     private URLSha loggerSha;
     private String loggerName;
@@ -46,7 +53,11 @@ public class LogbackImpl implements Logback {
     }
 
     private void initLogger(URL configurationUrl, String loggerName) throws JoranException, IOException {
+
+        System.setProperty(ELASTIC_URL_PROPERTY, StatisticsConfiguration.get().getLogbackElasticUrl());
+
         LoggerContext loggerContext = new LoggerContext();
+
         ContextInitializer contextInitializer = new ContextInitializer(loggerContext);
         contextInitializer.configureByResource(configurationUrl);
         this.loggerSha = new URLSha(configurationUrl);
@@ -54,12 +65,7 @@ public class LogbackImpl implements Logback {
     }
 
     private URL getConfigurationURL() throws MalformedURLException {
-        String configurationUrlString = PropertyLoader.getLogbackConfigXmlUrl();
-        if (configurationUrlString == null) {
-            throw new IllegalStateException("LOGBack XML configuration file not specified");
-        }
-
-        return new URL(configurationUrlString);
+        return getClass().getClassLoader().getResource("logback-elastic.xml");
     }
 
     @Override
@@ -71,7 +77,9 @@ public class LogbackImpl implements Logback {
 
     @Override
     public void log(Marker marker, String msg) {
-        throw new UnsupportedOperationException();
+        if (logger != null) {
+            logger.info(marker, msg);
+        }
     }
 
     public Logger getLogger() {
@@ -85,11 +93,16 @@ public class LogbackImpl implements Logback {
 
         URL configurationUrl = getConfigurationURL();
         URLSha latestSha1 = new URLSha(getConfigurationURL());
-        if (!latestSha1.equals(loggerSha)) {
+        if (!latestSha1.equals(loggerSha) || hasElasticUrlChanged()) {
             initLogger(configurationUrl, loggerName);
             return true;
         }
 
         return false;
+    }
+
+    private boolean hasElasticUrlChanged() {
+        String currentElasticUrl = System.getProperty(ELASTIC_URL_PROPERTY);
+        return currentElasticUrl != null && (! currentElasticUrl.equals(StatisticsConfiguration.get().getLogbackElasticUrl()));
     }
 }
